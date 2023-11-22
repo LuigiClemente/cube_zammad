@@ -25,33 +25,32 @@ flowchart TD
 
     AuthorizedUser -->|Valid Credentials| UserAuth
 ```
-
-
 ## Cube.js Integration with Zammad Webhooks
 
 ## Overview
 
-In this integration, Cube.js acts as a middleware between Zammad, an open-source ticketing system, and an Elasticsearch database. The primary functionalities include receiving and validating Zammad webhooks, updating an Elasticsearch database based on the webhook data, and authenticating Cube.js users.
+In this integration, Cube.js serves as a middleware between Zammad, an open-source ticketing system, and an Elasticsearch database. The key functionalities encompass the reception and validation of Zammad webhooks, updating an Elasticsearch database based on the webhook data, and authenticating Cube.js users.
 
 ## Workflow
 
-### 1\. Zammad Webhook Reception
+### 1. Zammad Webhook Reception
 
-When events occur in Zammad, such as ticket updates or new interactions, Zammad sends webhooks to Cube.js. These webhooks contain relevant data about the events.
+Whenever events that are being tacked occur in Zammad, such as User updates, Zammad dispatches webhooks to Cube.js. These webhooks encapsulate pertinent data regarding the events.
 
-### 2\. Cube.js Webhook Validation
+### 2. Cube.js Webhook Validation
 
-Upon receiving a Zammad webhook, Cube.js utilizes the `ZammadApi` class to validate the webhook payload. The validation checks for the presence of required fields and ensures the integrity of the data received from Zammad.
+Upon receipt of a Zammad webhook, Cube.js employs the `ZammadApi` class to validate the webhook payload. The validation process checks for the presence of required fields and ensures the integrity of the data received from Zammad.
 
-### 3\. Updating Elasticsearch Database
+### 3. Updating Elasticsearch Database
 
-If the Zammad webhook payload is valid, Cube.js processes the data and updates an Elasticsearch database. This database likely stores information related to Zammad tickets, user interactions, or other relevant data.
+If the Zammad webhook payload proves valid, Cube.js processes the data and effectuates updates to an Elasticsearch database. This database likely houses information pertinent to Zammad tickets, user interactions, or other relevant data.
 
-### 4\. User Authentication in Cube.js
+### 4. User Authentication in Cube.js
 
-When users interact with Cube.js, the application validates their credentials using the Zammad API. This involves setting and validating Zammad API tokens to authenticate Cube.js users.
+During user interaction with Cube.js, the application verifies their credentials using the Zammad API. This entails the establishment and validation of Zammad API tokens to authenticate Cube.js users.
 
-### 5\. User Interaction with Cube.js
+### 5. User Interaction with Cube.js
 
-Once authenticated, users can interact with Cube.js functionalities, such as querying data or performing analytics. Cube.js ensures that only authorized users with valid Zammad credentials can access and manipulate the data.
+Once authenticated, users can engage with Cube.js functionalities, such as querying data or performing analytics. Cube.js ensures that only authorized users possessing valid Zammad credentials can access and manipulate the data.
 
+**Demo App:** [Cube.js Zammad Integration Demo](https://dashboard-cube-six.vercel.app/#/)
