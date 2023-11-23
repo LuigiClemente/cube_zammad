@@ -151,7 +151,7 @@ Run the example file:
 
 ```bash
 ts-node src/alimentoExample.ts
-
+```
 ### Step 1: Define Interfaces
 
 Create TypeScript interfaces for the Analise entity:
