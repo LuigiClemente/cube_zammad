@@ -1,3 +1,26 @@
+ ```mermaid
+graph TD
+  subgraph "Application"
+    subgraph "Elasticsearch Index (usuarioIndex)"
+      A[encode: lowercase, split by non-word characters]
+      B[tokenize: strict]
+      C[Cache: true]
+      D[Document Fields: tipo_usuario, nome_dieta, ...]
+      E[Create Index]
+      F[Add Entry with user_id]
+    end
+  end
+
+  subgraph "Data Source"
+    G[User ID: 123]
+    H[Usuario Data]
+  end
+
+  A --> B --> C --> D --> E --> F
+  G --> H --> F
+```
+
+
 ### Step 1: Install Dependencies
 
 Firstly, install the necessary packages:
