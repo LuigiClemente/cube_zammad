@@ -75,7 +75,7 @@ interface UserData {
 Create a file to set up the Elasticsearch client and define the index configuration:
 
 ```typescript
-// src/elasticsearch.ts
+// src/alimentoElasticsearch.ts
 
 import { Client } from '@elastic/elasticsearch';
 
@@ -89,32 +89,7 @@ export async function createIndex() {
     body: {
       mappings: {
         properties: {
-          id_alimento: { type: 'keyword' },
-          nome_alimento: { type: 'text' },
-          descrição_alimento: { type: 'text' },
-          calorias: { type: 'float' },
-          proteínas: { type: 'float' },
-          carboidratos: { type: 'float' },
-          gorduras: { type: 'float' },
-          valor_energetico: { type: 'float' },
-          tamanho_porção: { type: 'text' },
-          nutrientes: { type: 'text' },
-          fonte: { type: 'text' },
-          instruções_preparo: { type: 'text' },
-          requisitos_armazenamento: { type: 'text' },
-          índice_glicêmico: { type: 'integer' },
-          carga_glicemia: { type: 'integer' },
-          fibra: { type: 'float' },
-          imagem_alimento: { type: 'text' },
-          individual_grade: { type: 'text' },
-          combined_grade: { type: 'text' },
-          created_at: { type: 'date' },
-          updated_at: { type: 'date' },
-          active: { type: 'boolean' },
-          excluido_em: { type: 'date' },
-          arquivado: { type: 'boolean' },
-          created_by_id: { type: 'integer' },
-          updated_by_id: { type: 'integer' },
+          // ... (same properties as defined in interfaces.ts for Alimento)
         },
       },
     },
@@ -127,9 +102,9 @@ export async function createIndex() {
 Create a file to handle indexing data in Elasticsearch:
 
 ```typescript
-// src/indexData.ts
+// src/indexAlimentoData.ts
 
-import { client, indexName } from './elasticsearch';
+import { client, indexName } from './alimentoElasticsearch';
 import { Alimento } from './interfaces';
 
 export async function indexAlimentoData(user_id: number, alimento_data: Alimento) {
@@ -146,10 +121,10 @@ export async function indexAlimentoData(user_id: number, alimento_data: Alimento
 Finally, create an example file to use the defined functions:
 
 ```typescript
-// src/example.ts
+// src/alimentoExample.ts
 
-import { createIndex } from './elasticsearch';
-import { indexAlimentoData } from './indexData';
+import { createIndex } from './alimentoElasticsearch';
+import { indexAlimentoData } from './indexAlimentoData';
 import { Alimento } from './interfaces';
 
 // Example usage
@@ -175,8 +150,8 @@ createIndex().then(() => {
 Run the example file:
 
 ```bash
-ts-node src/example.ts
-```
+ts-node src/alimentoExample.ts
+
 ### Step 1: Define Interfaces
 
 Create TypeScript interfaces for the Analise entity:
