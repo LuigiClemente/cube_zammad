@@ -1,39 +1,30 @@
 ```mermaid
 flowchart TD
 
-subgraph cluster_database
-  database(Database)
+subgraph Postgres
+  pgClient(PostgreSQL Client)
 end
 
-subgraph cluster_server
+subgraph Websocket
   express(Express)
   socketIo(Socket.IO)
-  pgClient(PostgreSQL)
 end
 
-subgraph cluster_vercel
+subgraph VercelCache
   clientVercel(Client Vercel)
-end
-
-subgraph cluster_cache
   cacheInvalidatedAt(Cache Invalidated At)
 end
 
-database --> express
+pgClient --> express
 express --> socketIo
-socketIo --> pgClient
-pgClient --> socketIo
 socketIo --> express
-pgClient --> database
-
-clientVercel --> socketIo
 socketIo --> clientVercel
 
-cacheInvalidatedAt --> socketIo
-socketIo --> cacheInvalidatedAt
+clientVercel --> socketIo
 
+cacheInvalidatedAt --> socketIo
 cacheInvalidatedAt -.-> express
-cacheInvalidatedAt -.-> database
+cacheInvalidatedAt -.-> pgClient
 ```
 
 
@@ -56,7 +47,7 @@ Upon detecting data changes, generate cache invalidation notifications. Include 
 
 ### 3. Send Notifications to Vercel
 
-Use a message queue, websockets, or direct server-to-server communication to send cache invalidation notifications to your Vercel application.
+Use a websockets to send cache invalidation notifications to your Vercel application.
 
 ### 4. Receive and Process Notifications in Vercel
 
