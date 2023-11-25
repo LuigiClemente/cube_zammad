@@ -45,7 +45,7 @@ const pool = new Pool({
 app.use(express.json());
 
 app.get('/api/user-data', async (req, res) => {
-  const userId = req.user.id; // Assume user information is included in the request
+  const userId = req.user.id; // User information is included in the request
 
   try {
     // Fetch user-specific data
