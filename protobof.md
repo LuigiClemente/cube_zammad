@@ -1,15 +1,15 @@
 ```mermaid
 flowchart TD
+  subgraph Backend
   subgraph PostgreSQL
-    subgraph Backend
       A[Database Encoding]
       B[Protobuf Integration]
-      C[Protobuf to JSON Conversion]
     end
   end
 
   subgraph React
     subgraph Frontend
+      C[Protobuf to JSON Conversion]
       D[Data Retrieval]
       E[Conversion and Display]
     end
