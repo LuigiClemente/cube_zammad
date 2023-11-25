@@ -62,7 +62,7 @@ const handleErrors = (err: Error, req: Request, res: Response, next: NextFunctio
   res.status(500).json({ error: 'Internal Server Error' });
 };
 
-// API endpoint to get user-specific data
+// API endpoint to get user-specific data with pagination and sorting
 app.get('/api/v1/user-data', authenticateUser, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -72,8 +72,21 @@ app.get('/api/v1/user-data', authenticateUser, async (req: Request, res: Respons
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Querying the database to fetch user data based on the user ID
-    const userData: QueryResult = await pool.query('SELECT * FROM usuario WHERE id = $1', [userId]);
+    // Query parameters for pagination and sorting
+    const { page = 1, per_page = 5, sort_by = 'created_at', order_by = 'asc' } = req.query;
+
+    // Construct the SQL query with pagination and sorting
+    const sqlQuery = `
+      SELECT *
+      FROM usuario
+      WHERE id = $1
+      ORDER BY ${sort_by} ${order_by}
+      LIMIT ${per_page}
+      OFFSET ${(page - 1) * per_page};
+    `;
+
+    // Querying the database to fetch user data based on the user ID with pagination and sorting
+    const userData: QueryResult = await pool.query(sqlQuery, [userId]);
 
     // Check if the user exists
     if (userData.rows.length === 0) {
@@ -81,7 +94,7 @@ app.get('/api/v1/user-data', authenticateUser, async (req: Request, res: Respons
     }
 
     // Return the user data as a JSON response
-    res.json(userData.rows[0]);
+    res.json(userData.rows);
   } catch (error) {
     // Log and handle more specific errors
     next(error);
@@ -90,6 +103,11 @@ app.get('/api/v1/user-data', authenticateUser, async (req: Request, res: Respons
 
 // Apply error handling middleware
 app.use(handleErrors);
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 ```
 ### 4. Environment Variables and `.env` File:
 
