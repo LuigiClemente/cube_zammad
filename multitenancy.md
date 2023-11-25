@@ -5,10 +5,27 @@ In your PostgreSQL database, think of each user from Zammad like a hub. This hub
 It's like having a main user ID that ties to different types of information about that user, such as food details (alimento), analyses (analise), meal information (refeicao), and general user data (usuario). This way, everything related to a user is neatly organized and connected through their unique hub in the usuario table.
 
 ```sql
--- For User table
+-- For User table (usuario)
 ALTER TABLE usuario
-ADD FOREIGN KEY (id_alimento) REFERENCES alimento(id),
-ADD FOREIGN KEY (id_refeicao) REFERENCES refeicao(id);
+ADD COLUMN id_alimento INTEGER,
+ADD COLUMN id_refeicao INTEGER,
+ADD CONSTRAINT fk_usuario_alimento FOREIGN KEY (id_alimento) REFERENCES alimento(id),
+ADD CONSTRAINT fk_usuario_refeicao FOREIGN KEY (id_refeicao) REFERENCES refeicao(id);
+
+-- For Alimento table
+ALTER TABLE alimento
+ADD CONSTRAINT fk_alimento_usuario FOREIGN KEY (created_by_id) REFERENCES usuario(id);
+
+-- For Analise table
+ALTER TABLE analise
+ADD COLUMN id_usuario INTEGER,
+ADD CONSTRAINT fk_analise_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id);
+
+-- For Refeicao table
+ALTER TABLE refeicao
+ADD COLUMN id_usuario INTEGER,
+ADD CONSTRAINT fk_refeicao_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id);
+
 ```
 
 This strongly says that each user in the usuario table is directly linked to specific information in the alimento and refeicao tables. It's like having a clear connection that ties a user to their related data in these other tables using foreign key relationships.
