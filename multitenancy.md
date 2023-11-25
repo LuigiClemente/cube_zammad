@@ -91,3 +91,28 @@ app.get('/api/v1/user-data', authenticateUser, async (req: Request, res: Respons
 // Apply error handling middleware
 app.use(handleErrors);
 ```
+### 4. Environment Variables and `.env` File:
+
+In your TypeScript implementation, you are using the `dotenv` library to load environment variables from a `.env` file. This is a good practice for keeping sensitive information and configuration separate from your code. Below is an example of what your `.env` file might look like:
+
+```plaintext
+# .env file
+
+# Database connection URL
+DATABASE_URL=your_postgresql_connection_url
+
+# Node environment
+NODE_ENV=development
+
+# Port for the server
+PORT=3000
+```
+
+Make sure to add this file to your `.gitignore` to prevent it from being committed to version control, keeping your sensitive information safe.
+
+```plaintext
+# .gitignore file
+
+# Ignore .env files
+.env
+```
