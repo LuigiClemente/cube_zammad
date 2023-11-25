@@ -11,7 +11,8 @@ ADD FOREIGN KEY (id_alimento) REFERENCES alimento(id),
 ADD FOREIGN KEY (id_refeicao) REFERENCES refeicao(id);
 ```
 
-This unequivocally affirms that every `usuario` instance is unambiguously associated with records in the `alimento` and `refeicao` tables through foreign key relationships.
+This strongly says that each user in the usuario table is directly linked to specific information in the alimento and refeicao tables. It's like having a clear connection that ties a user to their related data in these other tables using foreign key relationships.
+
 
 ### 2. Data Security Measures:
 
