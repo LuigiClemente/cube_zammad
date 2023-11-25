@@ -93,7 +93,7 @@ app.use(handleErrors);
 ```
 ### 4. Environment Variables and `.env` File:
 
-In your TypeScript implementation, you are using the `dotenv` library to load environment variables from a `.env` file. This is a good practice for keeping sensitive information and configuration separate from your code. Below is an example of what your `.env` file might look like:
+In your TypeScript implementation, you are using the `dotenv` library to load environment variables from a `.env` file. Below is an example of what your `.env` file might look like:
 
 ```plaintext
 # .env file
@@ -108,7 +108,7 @@ NODE_ENV=development
 PORT=3000
 ```
 
-Make sure to add this file to your `.gitignore` to prevent it from being committed to version control, keeping your sensitive information safe.
+Make sure to add this file to your `.gitignore` to prevent it from being committed to version control.
 
 ```plaintext
 # .gitignore file
