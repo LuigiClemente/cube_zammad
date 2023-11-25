@@ -28,7 +28,7 @@ This irrefutably establishes that only the user whose `id` corresponds to the `c
 
 ### 3. TypeScript Implementation:
 
-In the TypeScript implementation, a Node.js server, driven by Express and the `pg` library, solidifies the integration between your frontend and the PostgreSQL database. The code snippet below exemplifies the assertive TypeScript implementation:
+In the TypeScript part, we're using a Node.js server with Express and the pg library. This helps connect your website's front end to the PostgreSQL database. The code snippet below shows how we've set up TypeScript in a confident way.
 
 ```typescript
 import express, { Request, Response, NextFunction } from 'express';
