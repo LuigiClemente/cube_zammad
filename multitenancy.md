@@ -90,9 +90,4 @@ app.get('/api/v1/user-data', authenticateUser, async (req: Request, res: Respons
 
 // Apply error handling middleware
 app.use(handleErrors);
-
-// Start the Express server on the specified port
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-});
 ```
