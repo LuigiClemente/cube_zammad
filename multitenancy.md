@@ -31,36 +31,67 @@ This irrefutably establishes that only the user whose `id` corresponds to the `c
 In the TypeScript implementation, a Node.js server, driven by Express and the `pg` library, solidifies the integration between your frontend and the PostgreSQL database. The code snippet below exemplifies the assertive TypeScript implementation:
 
 ```typescript
-import express from 'express';
-import { Pool } from 'pg';
+import express, { Request, Response, NextFunction } from 'express';
+import { Pool, QueryResult } from 'pg';
+import dotenv from 'dotenv';
 
-const app = express();
-const port = 3000;
+dotenv.config();
 
+// Creating a PostgreSQL connection pool for handling database connections
 const pool = new Pool({
-  user: 'your_user',
-  host: 'your_host',
-  database: 'your_database',
-  password: 'your_password',
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
-app.use(express.json());
+const app = express();
+const port = process.env.PORT || 3000;
 
-app.get('/api/user-data', async (req, res) => {
-  const userId = req.user.id; // User information is included in the request
+// Middleware for Authentication and Authorization
+const authenticateUser = (req: Request, res: Response, next: NextFunction) => {
+  // Your Zammad authentication logic here
+  // Your Zammad valid authentication token / session
+  // If not, return a 401 Unauthorized response
+  // Otherwise, set req.user with the authenticated user details
+  next();
+};
 
+// Middleware for Error Handling
+const handleErrors = (err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('Error:', err);
+  // Return a more specific error message based on the type of error
+  res.status(500).json({ error: 'Internal Server Error' });
+};
+
+// API endpoint to get user-specific data
+app.get('/api/v1/user-data', authenticateUser, async (req: Request, res: Response) => {
   try {
-    // Fetch user-specific data
-    const userData = await pool.query('SELECT * FROM usuario WHERE id = $1', [userId]);
+    const userId = req.user?.id;
 
-    res.json(userData.rows);
+    // Check if the user is authenticated
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Querying the database to fetch user data based on the user ID
+    const userData: QueryResult = await pool.query('SELECT * FROM usuario WHERE id = $1', [userId]);
+
+    // Check if the user exists
+    if (userData.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Return the user data as a JSON response
+    res.json(userData.rows[0]);
   } catch (error) {
-    console.error('Error fetching user data:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    // Log and handle more specific errors
+    next(error);
   }
 });
 
+// Apply error handling middleware
+app.use(handleErrors);
+
+// Start the Express server on the specified port
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
