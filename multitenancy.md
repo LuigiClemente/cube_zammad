@@ -1,6 +1,8 @@
 ### 1. Establishing Relationships:
 
-In your PostgreSQL database, each user from Zammad is intricately connected to distinct tables, such as `alimento`, `analise`, `refeicao`, and `usuario`. These relationships are integral, and each `usuario` entry serves as a pivotal point, linking to specific records in the associated tables.
+In your PostgreSQL database, think of each user from Zammad like a hub. This hub connects to different tables named alimento, analise, refeicao, and usuario. Each user's hub, specifically in the usuario table, acts as a central point linking to specific records in these connected tables.
+
+It's like having a main user ID that ties to different types of information about that user, such as food details (alimento), analyses (analise), meal information (refeicao), and general user data (usuario). This way, everything related to a user is neatly organized and connected through their unique hub in the usuario table.
 
 ```sql
 -- For User table
