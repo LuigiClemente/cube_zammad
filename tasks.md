@@ -51,7 +51,7 @@
 #### Task 4.2: Time-Based Cache System
 
 * **Description**: Implement a time-based cache system.
-* **Details**: Design and implement a cache system based on time intervals to ensure efficient data retrieval.
+* **Details**: Implement a cache system based on time intervals to ensure efficient data retrieval.
 
 ### 5. TypeScript Integration
 
