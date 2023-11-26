@@ -5,7 +5,7 @@
 #### Task 1.1: Zammad User Creation
 
 * **Description**: Users are created in Zammad.
-* **Details**: Zammad triggers a webhook upon user creation, sending the username to our ExpressJS app.
+* **Details**: Zammad triggers a webhook upon user creation, udation adn deletion, sending the username to our ExpressJS app.
 
 #### Task 1.2: Webhook Validation
 
