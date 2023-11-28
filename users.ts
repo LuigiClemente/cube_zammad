@@ -3,7 +3,8 @@ import axios, { AxiosInstance, AxiosResponse } from "axios";
 import jwt, { VerifyErrors, Secret } from "jsonwebtoken";
 import Endpoints from "./Endpoints";
 import ApiError from "./ApiError";
-import { IncomingHttpHeaders } from "http";
+import { IncomingHttpHeaders, IncomingMessage, ServerResponse } from "http";
+import crypto from "crypto";
 
 // Define the CubeContext interface for the Cube.js context object
 interface CubeContext {
@@ -230,22 +231,7 @@ class ZammadApi {
    * @returns {boolean} Returns true if the payload is valid, false otherwise.
    * @throws {Error} Throws an error for invalid payloads.
    */
-  validateWebhookPayload(
-    headers: IncomingHttpHeaders,
-    payload: object
-  ): boolean {
-    // Validate headers signature and delivery
-    // Example
-    // X-Zammad-Trigger: Name of the Trigger
-    // X-Zammad-Delivery: xxxx-xx-xxx-xx
-    // X-Hub-Signature: sha1=xxx
-    const isValidSignature =
-      headers["x-zammad-trigger"] === Endpoints.delivery &&
-      headers["x-hub-signature"] === Endpoints.signature;
-    if (!isValidSignature) {
-      throw new Error("Invalid Zammad webhook signature.");
-    }
-
+  validateWebhookPayload(payload: object): boolean {
     const isValidPayload =
       payload && (payload as any).ticket && (payload as any).article;
 
@@ -296,6 +282,28 @@ class ZammadApi {
     return {
       exp: 0,
     };
+  }
+
+  // Verify function compatible with body-parser to retrieve the request payload.
+  // Read more: https://github.com/expressjs/body-parser#verify
+  verifyRequest(
+    req: IncomingMessage,
+    res: ServerResponse<IncomingMessage>,
+    buf: Buffer,
+    encoding: string
+  ) {
+    const expected = req.headers["x-hub-signature"];
+    const hmac = crypto.createHmac(
+      "sha1",
+      process.env.ZAMAAD_SECRET_SHA1 as string
+    );
+    hmac.update(buf);
+    const calculated = "sha1=" + hmac.digest("hex");
+    if (expected !== calculated) {
+      throw new Error("Invalid signature.");
+    } else {
+      console.log("Valid signature!");
+    }
   }
 }
 

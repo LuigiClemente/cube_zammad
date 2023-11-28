@@ -18,7 +18,6 @@ const pool = new Pool({
 });
 
 const app = express();
-app.use(express.json());
 const port = process.env.PORT || 3000;
 const cubeContext = {
   securityContext: {
@@ -34,6 +33,12 @@ const cubeContext = {
   },
 };
 const zammadApi = new ZammadApi(process.env.ZAMMAD_HOST as string, cubeContext);
+
+app.use(
+  express.json({
+    verify: zammadApi.verifyRequest,
+  })
+);
 
 // Middleware for Authentication and Authorization
 const authenticateUser = async (
@@ -67,14 +72,13 @@ const handleErrors = (
 // API endpoint for zammad webhook
 app.post(
   "/api/v1/webhook",
-  authenticateUser,
   async (req: UserRequset, res: Response, next: NextFunction) => {
     try {
       const headers = req.headers;
       const payload = req.body;
 
       // Check webhook payload validation
-      const isValidated = zammadApi.validateWebhookPayload(headers, payload);
+      const isValidated = zammadApi.validateWebhookPayload(payload);
 
       // Import user ID from the validated webhook
       const userId = payload.ticket.customer_id;
