@@ -3,6 +3,7 @@ import axios, { AxiosInstance, AxiosResponse } from "axios";
 import jwt, { VerifyErrors, Secret } from "jsonwebtoken";
 import Endpoints from "./Endpoints";
 import ApiError from "./ApiError";
+import { IncomingHttpHeaders } from "http";
 
 // Define the CubeContext interface for the Cube.js context object
 interface CubeContext {
@@ -138,7 +139,7 @@ class ZammadApi {
   constructor(host: string, cubeContext: CubeContext) {
     // Class properties initialization
     this.host = host;
-    this.token = null;
+    this.token = process.env.ZAMMAD_TOKEN as string;
     this.appId = cubeContext.contextToAppId(cubeContext);
     this.orchestratorId = cubeContext.contextToOrchestratorId(cubeContext);
 
@@ -160,14 +161,19 @@ class ZammadApi {
    * @throws {Error} Throws an error if the token is invalid.
    */
   setToken(token: string, cubeContext: CubeContext): void {
-    if (!token || typeof token !== 'string') {
-      throw new Error("Invalid token format. Token is required for authentication.");
+    if (!token || typeof token !== "string") {
+      throw new Error(
+        "Invalid token format. Token is required for authentication."
+      );
     }
 
     // Verify the token format using a regular expression
-    const tokenFormatRegex = /^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.[A-Za-z0-9-_.+/=]*$/;
+    const tokenFormatRegex =
+      /^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.[A-Za-z0-9-_.+/=]*$/;
     if (!tokenFormatRegex.test(token)) {
-      throw new Error("Invalid token format. Token does not match the expected format.");
+      throw new Error(
+        "Invalid token format. Token does not match the expected format."
+      );
     }
 
     // Check if the token is expired
@@ -181,14 +187,25 @@ class ZammadApi {
     this.updateAxiosHeaders(cubeContext);
   }
 
+  async getMyInformation(): Promise<UserData> {
+    const res = await this.axiosInstance.get("/users/me", {
+      headers: {
+        Authorization: `Token token=${this.token}`,
+      },
+    });
+    return res.data;
+  }
+
   /**
    * Throws an error if the given data is not an object.
    * @param {any} data - Data to be checked.
    * @throws {ApiError.UnexpectedResponse} Throws if not an object.
    */
   isObjectOrError(data: any): void {
-    if (typeof data !== 'object' || data === null) {
-      throw new ApiError.UnexpectedResponse("Unexpected response format. Expected an object.");
+    if (typeof data !== "object" || data === null) {
+      throw new ApiError.UnexpectedResponse(
+        "Unexpected response format. Expected an object."
+      );
     }
   }
 
@@ -201,7 +218,9 @@ class ZammadApi {
     // TODO: Add logic to check for expected response codes and handle errors accordingly
     // Implement your logic here
     if (res.status < 200 || res.status >= 300) {
-      throw new ApiError.UnexpectedResponse(`Unexpected response code: ${res.status}`);
+      throw new ApiError.UnexpectedResponse(
+        `Unexpected response code: ${res.status}`
+      );
     }
   }
 
@@ -211,14 +230,29 @@ class ZammadApi {
    * @returns {boolean} Returns true if the payload is valid, false otherwise.
    * @throws {Error} Throws an error for invalid payloads.
    */
-  validateWebhookPayload(payload: object): boolean {
-    // TODO: Add your validation logic here based on the Zammad webhook payload structure
-    // For example, you can check the presence of required fields or verify the signature
-    // Replace the following with your actual validation logic
-    const isValidPayload = payload && (payload as any).ticket && (payload as any).article;
+  validateWebhookPayload(
+    headers: IncomingHttpHeaders,
+    payload: object
+  ): boolean {
+    // Validate headers signature and delivery
+    // Example
+    // X-Zammad-Trigger: Name of the Trigger
+    // X-Zammad-Delivery: xxxx-xx-xxx-xx
+    // X-Hub-Signature: sha1=xxx
+    const isValidSignature =
+      headers["x-zammad-trigger"] === Endpoints.delivery &&
+      headers["x-hub-signature"] === Endpoints.signature;
+    if (!isValidSignature) {
+      throw new Error("Invalid Zammad webhook signature.");
+    }
+
+    const isValidPayload =
+      payload && (payload as any).ticket && (payload as any).article;
 
     if (!isValidPayload) {
-      throw new Error("Invalid Zammad webhook payload. Required fields are missing.");
+      throw new Error(
+        "Invalid Zammad webhook payload. Required fields are missing."
+      );
     }
 
     return true;
@@ -231,9 +265,12 @@ class ZammadApi {
   private updateAxiosHeaders(cubeContext: CubeContext): void {
     this.appId = cubeContext.contextToAppId(cubeContext);
     this.orchestratorId = cubeContext.contextToOrchestratorId(cubeContext);
-    this.axiosInstance.defaults.headers.common['Cube-App-Id'] = this.appId;
-    this.axiosInstance.defaults.headers.common['Cube-Orchestrator-Id'] = this.orchestratorId;
-    this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+    this.axiosInstance.defaults.headers.common["Cube-App-Id"] = this.appId;
+    this.axiosInstance.defaults.headers.common["Cube-Orchestrator-Id"] =
+      this.orchestratorId;
+    this.axiosInstance.defaults.headers.common[
+      "Authorization"
+    ] = `Bearer ${this.token}`;
   }
 
   /**
@@ -247,12 +284,18 @@ class ZammadApi {
     const decodedToken = this.decodeToken(token);
 
     // Check if the token has an expiration time
-    if (decodedToken && typeof decodedToken.exp === 'number') {
+    if (decodedToken && typeof decodedToken.exp === "number") {
       return decodedToken.exp < currentTimestamp; // Token is expired if expiration time is in the past
     }
 
     // If the token does not have an expiration time, consider it as not expired
     return false;
+  }
+
+  private decodeToken(token: string) {
+    return {
+      exp: 0,
+    };
   }
 }
 
