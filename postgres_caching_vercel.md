@@ -90,29 +90,80 @@ Upon detecting data changes, generate cache invalidation notifications, includin
 
 Utilize Soketi to dispatch cache invalidation notifications to your Vercel application.
 
-### 5. Receive and Process Notifications in Vercel 
+### 5. Receive and Process Notifications in Vercel
+
 In your Vercel application, implement a listener to receive cache invalidation notifications. Upon notification reception, identify the affected cache entries and invalidate them using Vercel's CDN API.
 
 ```typescript
-// Vercel Listener
+import express from 'express';
+import Soketi, { Socket } from 'soketi';
+import pg from 'pg';
+
+const app = express();
+const server = app.listen(3000);
+const soketiServer = new Soketi(server);
+
+// Initialize PostgreSQL client
+const pgClient = new pg.Client({
+  connectionString: 'postgresql://user:password@localhost:5432/database',
+});
+
+// Connect to the PostgreSQL database
+pgClient.connect();
+
+// Set up a PostgreSQL notification listener for data changes
+pgClient.on('notification', async (message) => {
+  try {
+    // Extract cache key from the notification payload
+    const cacheKey = message.payload;
+    console.log(`Data changed for cache key: ${cacheKey}`);
+
+    // Generate cache invalidation notification using Soketi
+    soketiServer.emit('cache-invalidate', { cacheKey });
+
+    // Handle cache invalidation logic
+    await handleCacheInvalidation(cacheKey);
+
+    console.log(`Cache invalidated and updated for key: ${cacheKey}`);
+  } catch (error) {
+    console.error(`Error processing cache invalidation: ${error.message}`);
+  }
+});
+
+// Handle Soketi connections
 soketiServer.on('connection', (socket: Socket) => {
-  socket.on('cache-invalidate', (data: { cacheKey: string }) => {
-    const { cacheKey } = data;
-    console.log(`Invalidating cache key: ${cacheKey}`);
+  // Listen for cache invalidation notifications from clients
+  socket.on('cache-invalidate', async (data: { cacheKey: string }) => {
+    try {
+      const { cacheKey } = data;
+      console.log(`Invalidating cache key: ${cacheKey}`);
 
-    // TODO: Invalidate cache entry in Vercel's CDN
-    // ...
+      // Handle cache invalidation logic
+      await handleCacheInvalidation(cacheKey);
 
-    // TODO: Fetch updated data from PostgreSQL using SQL queries
-    // ...
-
-    // TODO: Recache updated data in Vercel's CDN
-    // ...
+      console.log(`Cache invalidated and updated for key: ${cacheKey}`);
+    } catch (error) {
+      console.error(`Error processing cache invalidation: ${error.message}`);
+    }
   });
 });
+
+// Function to handle cache invalidation logic
+const handleCacheInvalidation = async (cacheKey: string): Promise<void> => {
+  // TODO: Implement cache invalidation logic here
+  // For example, invalidate cache entry in Vercel's CDN, fetch updated data, and recache data
+  // ...
+
+  // Simulate asynchronous operations (replace with actual logic)
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+};
+
+// Example usage
+// This example assumes cache invalidation notifications trigger automatically from PostgreSQL changes
+// and the logic for handling invalidation is asynchronous.
 ```
 
-### 6. Fetch Updated Data from PostgreSQL 
+### 6. Fetch Updated Data from PostgreSQL
 
 For invalidated cache entries, fetch the latest data from the PostgreSQL database using specific SQL queries.
 
@@ -121,25 +172,114 @@ For invalidated cache entries, fetch the latest data from the PostgreSQL databas
 SELECT * FROM user_data WHERE cache_key = 'some_cache_key';
 ```
 
-### 7. Recache Updated Data in Vercel 
+### 7. Recache Updated Data in Vercel
 
 Recache the updated data in Vercel's CDN with appropriate cache headers, including the expiration time and cache invalidation identifier.
 
 ```typescript
-// Recaching in Vercel
-// TODO: Recache data in Vercel's CDN with appropriate headers
+// Import necessary libraries and modules
+import { Cache } from 'your-cache-library'; // Import your cache library
+import { VercelCDN } from 'your-vercel-cdn-library'; // Import your Vercel CDN library
+import { PostgreSQLClient } from 'your-postgres-client-library'; // Import your PostgreSQL client library
+
+// Define your cache expiration time (in seconds)
+const cacheExpirationTime = 3600; // 1 hour
+
+// Function to fetch updated data from PostgreSQL
+const fetchDataFromPostgreSQL = async (cacheKey: string): Promise<any> => {
+  try {
+    // TODO: Implement logic to fetch data from PostgreSQL using specific SQL queries
+    // Example: const result = await postgresClient.query(`SELECT * FROM your_table WHERE cache_key = $1`, [cacheKey]);
+    // Return the fetched data
+    return result.rows; // Modify as per the structure of your fetched data
+  } catch (error) {
+    throw new Error(`Error fetching data from PostgreSQL: ${error.message}`);
+  }
+};
+
+// Recache Updated Data in Vercel's CDN (TypeScript)
+const recacheUpdatedData = async (cacheKey: string) => {
+  try {
+    // Fetch updated data from your data source (e.g., PostgreSQL)
+    const updatedData = await fetchDataFromPostgreSQL(cacheKey);
+
+    // Initialize cache and Vercel CDN instances
+    const cache = new Cache();
+    const vercelCDN = new VercelCDN();
+
+    // Set cache headers with expiration time and cache invalidation identifier
+    const cacheHeaders = {
+      'Cache-Control': `max-age=${cacheExpirationTime}, stale-while-revalidate`,
+      'X-Cache-Invalidate-Identifier': cacheKey,
+    };
+
+    // Store updated data in the cache
+    cache.set(cacheKey, updatedData, cacheExpirationTime);
+
+    // Upload updated data to Vercel's CDN
+    await vercelCDN.upload(cacheKey, updatedData, cacheHeaders);
+
+    console.log(`Successfully recached data for cache key: ${cacheKey}`);
+  } catch (error) {
+    console.error(`Error recaching data for cache key ${cacheKey}: ${error.message}`);
+  }
+};
+
+// Example usage
+const cacheKey = 'some_cache_key';
+recacheUpdatedData(cacheKey);
 ```
 
-### 8. Timestamp-Based Cache Invalidation 
+### 8. Timestamp-Based Cache Invalidation
 
 Incorporate a more sophisticated timestamp-based cache invalidation strategy. This strategy prevents unnecessary updates within a short timeframe and refreshes cached data only after a specified time period.
 
 ```typescript
-// Timestamp-Based Cache Invalidation
-// TODO: Implement a more sophisticated timestamp-based cache invalidation strategy
+class TimestampCacheInvalidation {
+  private lastUpdateTime: number = Date.now();
+  private resetCounter: number = 0;
+  private resetThreshold: number = 60 * 60 * 1000; // 60 minutes in milliseconds
+
+  // Method to check if cache needs to be invalidated
+  public shouldInvalidateCache(): boolean {
+    const currentTime = Date.now();
+
+    // Check if the reset threshold is reached
+    if (currentTime - this.lastUpdateTime >= this.resetThreshold) {
+      // Reset the counter and update the last update time
+      this.resetCounter = 0;
+      this.lastUpdateTime = currentTime;
+      return false; // Cache does not need to be invalidated
+    }
+
+    // Increment the counter for each change
+    this.resetCounter++;
+
+    // Check if the counter reaches the threshold
+    if (this.resetCounter >= 60) {
+      // Reset the counter and update the last update time
+      this.resetCounter = 0;
+      this.lastUpdateTime = currentTime;
+      return true; // Cache needs to be invalidated
+    }
+
+    return false; // Cache does not need to be invalidated
+  }
+}
+
+// Example usage
+const cacheInvalidation = new TimestampCacheInvalidation();
+
+// Check if cache needs to be invalidated
+if (cacheInvalidation.shouldInvalidateCache()) {
+  // TODO: Implement cache invalidation logic here
+  console.log("Cache should be invalidated. Implement cache invalidation logic here.");
+} else {
+  console.log("Cache does not need to be invalidated.");
+}
 ```
 
-## Example Implementation 
+## Example Implementation
 
 ```typescript
 import express from 'express';
@@ -206,6 +346,5 @@ soketiClient.on('cache-invalidate', (data: { cacheKey: string }) => {
   // ...
 });
 ```
-
 
 Refer to the [soketi web documentation](https://soketi.app/). You can also check the soketi project on [GitHub](https://github.com/soketi/soketi).
