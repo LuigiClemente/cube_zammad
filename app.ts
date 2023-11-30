@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import { Pool } from "pg";
+import { Pool, Client } from "pg";
 import dotenv from "dotenv";
 import ZammadApi from "./users";
 
@@ -15,6 +15,44 @@ const pool = new Pool({
     process.env.NODE_ENV === "production"
       ? { rejectUnauthorized: false }
       : false,
+});
+
+const NEXT_URL = "https://client-vercel-b21quocbao.vercel.app";
+
+// Initialize PostgreSQL client
+const pgClient = new Client({
+  connectionString: process.env.DATABASE_URL,
+});
+
+// Connect to the PostgreSQL database
+pgClient.connect();
+
+pgClient.query("LISTEN data_change_notification");
+
+pgClient.on("notification", async (message) => {
+  console.log(message);
+  try {
+    // Extract cache key from the notification payload
+    const cacheKey = message.payload;
+    console.log(`Data changed for cache key: ${cacheKey}`);
+
+    // Call NextJs API to generate cache invalidation notification
+    var requestOptions = {
+      method: "POST",
+      headers: new Headers({
+        "Content-Type": "application/json",
+      }),
+      body: JSON.stringify({
+        tag: "user-data",
+      }),
+    };
+
+    await fetch(`${NEXT_URL}/api/invalidate`, requestOptions);
+
+    console.log(`Cache invalidated and updated for key: ${cacheKey}`);
+  } catch (error) {
+    console.error(`Error processing cache invalidation: ${error}`);
+  }
 });
 
 const app = express();
