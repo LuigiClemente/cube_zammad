@@ -18,8 +18,8 @@ flowchart TD
 
     ZammadEvents -->|1. Zammad Webhook<br>Reception| CubeJSAPI
     CubeJSAPI -->|2. Cube.js Webhook<br>Validation| ZammadApi
-    ZammadApi -->|Valid Payload| ElasticSearch
-    Postgres -->|3. Updating Elasticsearch<br>Database| UserAuth
+    ZammadApi -->|Valid Payload| Postgres
+    Postgres -->|3. Updating Postgres<br>Database| UserAuth
     UserAuth -->|4. User Authentication<br>in Cube.js| UserInteraction
     UserInteraction -->|5. User Interaction<br>with Cube.js| Postgres
 
@@ -41,7 +41,7 @@ Whenever events that are being tacked occur in Zammad, such as User updates, Zam
 
 Upon receipt of a Zammad webhook, Cube.js employs the `ZammadApi` class to validate the webhook payload. The validation process checks for the presence of required fields and ensures the integrity of the data received from Zammad.
 
-### 3. Updating Elasticsearch Database
+### 3. Updating Postgres Database
 
 If the Zammad webhook payload proves valid, Cube.js processes the data and effectuates updates to an Postgres database. This database likely houses information pertinent to Zammad tickets, user interactions, or other relevant data.
 
