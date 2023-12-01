@@ -2,7 +2,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { revalidateTag } from "next/cache";
 
-const API_URL = "http://localhost:5000";
+// TODO: Change this to your express app url
+const API_URL = "https://snapper-fit-snipe.ngrok-free.app";
 
 type Data = {
   User: any[];
