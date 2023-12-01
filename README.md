@@ -7,7 +7,7 @@ flowchart TD
     subgraph CubeJS
         CubeJSAPI[Cube.js API]
         ZammadApi[ZammadApi Class<br>for Webhook Validation]
-        ElasticSearch[Elasticsearch Database]
+        Postgres[Postgres Database]
         UserAuth[User Authentication<br>with Zammad API]
         UserInteraction[User Interaction<br>with Cube.js]
     end
@@ -19,9 +19,9 @@ flowchart TD
     ZammadEvents -->|1. Zammad Webhook<br>Reception| CubeJSAPI
     CubeJSAPI -->|2. Cube.js Webhook<br>Validation| ZammadApi
     ZammadApi -->|Valid Payload| ElasticSearch
-    ElasticSearch -->|3. Updating Elasticsearch<br>Database| UserAuth
+    Postgres -->|3. Updating Elasticsearch<br>Database| UserAuth
     UserAuth -->|4. User Authentication<br>in Cube.js| UserInteraction
-    UserInteraction -->|5. User Interaction<br>with Cube.js| ElasticSearch
+    UserInteraction -->|5. User Interaction<br>with Cube.js| Postgres
 
     AuthorizedUser -->|Valid Credentials| UserAuth
 ```
@@ -29,7 +29,7 @@ flowchart TD
 
 ## Overview
 
-In this integration, Cube.js serves as a middleware between Zammad, an open-source ticketing system, and an Elasticsearch database. The key functionalities encompass the reception and validation of Zammad webhooks, updating an Elasticsearch database based on the webhook data, and authenticating Cube.js users.
+In this integration, Cube.js serves as a middleware between Zammad, an open-source ticketing system, and an Postgres database. The key functionalities encompass the reception and validation of Zammad webhooks, updating an Postgres database based on the webhook data, and authenticating Cube.js users.
 
 ## Workflow
 
@@ -43,7 +43,7 @@ Upon receipt of a Zammad webhook, Cube.js employs the `ZammadApi` class to valid
 
 ### 3. Updating Elasticsearch Database
 
-If the Zammad webhook payload proves valid, Cube.js processes the data and effectuates updates to an Elasticsearch database. This database likely houses information pertinent to Zammad tickets, user interactions, or other relevant data.
+If the Zammad webhook payload proves valid, Cube.js processes the data and effectuates updates to an Postgres database. This database likely houses information pertinent to Zammad tickets, user interactions, or other relevant data.
 
 ### 4. User Authentication in Cube.js
 
