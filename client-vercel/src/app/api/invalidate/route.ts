@@ -1,6 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import type { NextApiRequest, NextApiResponse } from "next";
 import { revalidateTag } from "next/cache";
+import { NextRequest, NextResponse } from "next/server";
 
 type Data = {
   revalidated: boolean;
@@ -40,12 +40,10 @@ class TimestampCacheInvalidation {
 
 const cacheInvalidation = new TimestampCacheInvalidation();
 
-export default function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<Data>
-) {
+export async function POST(req: NextRequest) {
   // Get next tag needs invalidated
-  const { tag } = req.body;
+  const data = await req.json();
+  const { tag } = data;
 
   if (cacheInvalidation.shouldInvalidateCache()) {
     // Cache invalidation
@@ -53,9 +51,9 @@ export default function handler(
       "Cache should be invalidated. Implement cache invalidation logic here."
     );
     revalidateTag(tag as string);
-    res.status(200).json({ revalidated: true });
+    return NextResponse.json({ revalidated: true }, { status: 200 });
   } else {
     console.log("Cache does not need to be invalidated.");
-    res.status(200).json({ revalidated: false });
+    return NextResponse.json({ revalidated: false }, { status: 200 });
   }
 }
