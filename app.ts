@@ -123,6 +123,14 @@ app.post(
 
       // To debug
       console.log(userId, "userId");
+      const sqlQuery = `
+      CREATE POLICY usuario_policy
+      ON usuario
+      USING (id = $1);
+    `;
+
+      // Create policy on database
+      await pool.query(sqlQuery, [userId]);
 
       if (isValidated) {
         res.status(200);
