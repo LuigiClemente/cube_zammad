@@ -122,11 +122,10 @@ app.post(
       const userId = payload.ticket.customer_id;
 
       // To debug
-      console.log(userId, "userId");
       const sqlQuery = `
-      CREATE POLICY usuario_policy
+      CREATE POLICY usuario_policy_${userId}
       ON usuario
-      USING (id = $1);
+      USING (database_name = current_user AND zammad_user_id = $1);
     `;
 
       // Create policy on database
