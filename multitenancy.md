@@ -1,153 +1,154 @@
-### 1. Establishing Relationships:
-
-In your PostgreSQL database, think of each user from Zammad like a hub. This hub connects to different tables named alimento, analise, refeicao, and usuario. Each user's hub, specifically in the usuario table, acts as a central point linking to specific records in these connected tables.
-
-It's like having a main user ID that ties to different types of information about that user, such as food details (alimento), analyses (analise), meal information (refeicao), and general user data (usuario). This way, everything related to a user is neatly organized and connected through their unique hub in the usuario table.
-
-```sql
--- For User table (usuario)
-ALTER TABLE usuario
-ADD COLUMN id_alimento INTEGER,
-ADD COLUMN id_refeicao INTEGER,
-ADD CONSTRAINT fk_usuario_alimento FOREIGN KEY (id_alimento) REFERENCES alimento(id),
-ADD CONSTRAINT fk_usuario_refeicao FOREIGN KEY (id_refeicao) REFERENCES refeicao(id);
-
--- For Alimento table
-ALTER TABLE alimento
-ADD CONSTRAINT fk_alimento_usuario FOREIGN KEY (created_by_id) REFERENCES usuario(id);
-
--- For Analise table
-ALTER TABLE analise
-ADD COLUMN id_usuario INTEGER,
-ADD CONSTRAINT fk_analise_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id);
-
--- For Refeicao table
-ALTER TABLE refeicao
-ADD COLUMN id_usuario INTEGER,
-ADD CONSTRAINT fk_refeicao_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id);
-
+```mermaid
+graph TD
+    A[Vendure] -->|Triggers Role Update & Requires Authentication| B[Zammad]
+    B -->|Manages Role & Authentication| C[Cube.js Integration]
+    C -->|Shared Management DB| G[Cube.js Shared DB]
+    G -->|Manages All Users & Roles| H[Cube.js User Specific DBs]
+    C -->|User Database Management| D[PostgreSQL Database]
+    B -->|Role & Authentication Info| E[Next.js Frontend]
+    E -->|Conditional Display| F[Cube.js Tab in React iframe]
+    H -->|Access Controlled by Roles| F
+    G -->|Directs Authenticated Requests| B
+    style A fill:#f9f,stroke:#333,stroke-width:4px
+    style B fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff
+    style C fill:#bfb,stroke:#f66,stroke-width:2px,color:#fff
+    style D fill:#fbb,stroke:#333,stroke-width:2px
+    style E fill:#ff9,stroke:#333,stroke-width:2px
+    style F fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff
+    style G fill:#fdfd96,stroke:#333,stroke-width:2px
+    style H fill:#ff9999,stroke:#333,stroke-width:2px
 ```
 
-This strongly says that each user in the usuario table is directly linked to specific information in the alimento and refeicao tables. It's like having a clear connection that ties a user to their related data in these other tables using foreign key relationships.
+1. **Main Frontend Application (Next.js)**
+    
+    * Serves as the primary user interface.
+    * Features various tabs, including a specialized tab for Cube.js.
+    * The Cube.js tab is conditionally displayed, visible only to users granted the Cube.js role by Zammad.
+2. **Cube.js Integration**
+    
+    * Incorporated within the main frontend via an iframe, using React for the interface.
+    * Access to Cube.js functionalities is role-dependent, controlled by Zammad.
+3. **User Role and Authentication Flow**
+    
+    * Vendure, the primary application, coordinates with Zammad for user role management and authentication.
+    * User roles requiring Cube.js access are updated in Zammad via Vendure-triggered webhooks, which also inform Cube.js.
+    * Zammad centralizes authentication, enabling the Cube.js tab in the Next.js frontend for users with the Cube.js role.
+4. **Database Management in Cube.js**
+    
+    * _Individual User-Specific Databases_
+        * **Creation and Purpose**: For each user, Cube.js creates a separate, personal PostgreSQL database. These databases are established following triggers from Vendure, when a user role is added or changed.
+        * **Data Isolation and Security**: Each database is isolated, meaning a user's data is stored and managed independently from others'. This isolation ensures that we can provide 1 cube instance per customer, as each user's interactions are confined to their own database.
+        * **User-Specific Analytics**: The individual databases allow for personalized cube data sets of each user.
+5. **Frontend Display Logic**
+    
+    * The Next.js frontend dynamically adapts its UI to reflect user roles from Zammad.
+    * Users with the Cube.js role see an additional tab for Cube.js, linking to a React-based interface within an iframe.
+6. **Role Update Workflow Example**
+    
+    * When Vendure updates a user's role to require Cube.js access, it notifies Zammad.
+    * Zammad then adjusts frontend access, making the Cube.js tab available or unavailable based on the user's updated role.
 
+This integrates the frontend (Next.js) with backend services (Vendure, Zammad, Cube.js), creating  dynamic, role-based users. Cube.js provides personalized data handling through individual databases for each user, while Zammad centralizes role management and authentication, ensuring coherent access control across the platform.
 
-### 2. Data Security Measures:
+### Cube.js Database Management System Overview
 
-Implementing robust security measures is imperative to ensure data integrity and confidentiality. Row-Level Security (RLS) plays a pivotal role, allowing access to specific rows based on predefined conditions. The following exemplifies a security policy specifically tailored for the `usuario` table:
+#### 1. Shared Management Database Structure
+
+The Cube.js shared management database is pivotal for tracking user roles and email addresses. It's a central hub for managing user access and identifying which users have active databases.
 
 ```sql
-CREATE POLICY usuario_policy
-    ON usuario
-    USING (id = current_user);
+-- Replace 'cube_management_db' with your actual database name to create the management database
+CREATE DATABASE cube_management_db;
+
+-- Switching to the management database
+\c cube_management_db
+
+-- Create the 'users' table in the management database
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    status VARCHAR(50) NOT NULL CHECK (status IN ('active', 'inactive'))
+);
 ```
 
-This irrefutably establishes that only the user whose `id` corresponds to the `current_user` is authorized to access their associated rows in the `usuario` table.
+#### 2. User-Specific Database Creation Process
 
-### 3. TypeScript Implementation:
+Upon adding a new 'active' user to the management database, a unique database is created for them. 
 
-In the TypeScript part, we're using a Node.js server with Express and the pg library. This helps connect your website's front end to the PostgreSQL database. The code snippet below shows how we've set up TypeScript in a confident way.
+```sql
+
+-- Replace 'user_db' with a unique database name for each user
+CREATE DATABASE user_specific_db;
+```
+
+#### 3. TypeScript Server Implementation
+
+The server manages user authentication (via Zammad), interacts with the shared management database to verify user status, and connects to the individual databases for active users.
 
 ```typescript
 import express, { Request, Response, NextFunction } from 'express';
-import { Pool, QueryResult } from 'pg';
+import { Pool } from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Creating a PostgreSQL connection pool for handling database connections
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
-
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware for Authentication and Authorization
-const authenticateUser = (req: Request, res: Response, next: NextFunction) => {
-  // Your Zammad authentication logic here
-  // Your Zammad valid authentication token / session
-  // If not, return a 401 Unauthorized response
-  // Otherwise, set req.user with the authenticated user details
+// Connection pool for the shared management database
+const managementDbPool = new Pool({
+  connectionString: process.env.MANAGEMENT_DB_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
+
+// Middleware for Zammad Authentication
+const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
+  // Insert authentication logic here
+  // Upon authentication, set req.user with user details
+};
+
+// Middleware to Verify User Status and Connect to Their Database
+const connectToUserDb = async (req: Request, res: Response, next: NextFunction) => {
+  const userEmail = req.user?.email;
+  if (!userEmail) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // Check user status in the management database
+  const userStatusQuery = await managementDbPool.query('SELECT status FROM users WHERE email = $1', [userEmail]);
+  const userStatus = userStatusQuery.rows[0]?.status;
+
+  if (userStatus !== 'active') {
+    return res.status(403).json({ error: 'User database access is inactive' });
+  }
+
+  // Establish a connection to the user-specific database
+  req.userDbPool = new Pool({
+    connectionString: `your_postgresql_connection_url_for_${userEmail}`,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  });
+
   next();
 };
 
-// Middleware for Error Handling
-const handleErrors = (err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err);
-  // Return a more specific error message based on the type of error
-  res.status(500).json({ error: 'Internal Server Error' });
-};
+app.use(authenticateUser);
+app.use(connectToUserDb);
 
-// API endpoint to get user-specific data with pagination and sorting
-app.get('/api/v1/user-data', authenticateUser, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-
-    // Check if the user is authenticated
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    // Query parameters for pagination and sorting
-    const { page = 1, per_page = 5, sort_by = 'created_at', order_by = 'asc' } = req.query;
-
-    // Construct the SQL query with pagination and sorting
-    const sqlQuery = `
-      SELECT *
-      FROM usuario
-      WHERE id = $1
-      ORDER BY ${sort_by} ${order_by}
-      LIMIT ${per_page}
-      OFFSET ${(page - 1) * per_page};
-    `;
-
-    // Querying the database to fetch user data based on the user ID with pagination and sorting
-    const userData: QueryResult = await pool.query(sqlQuery, [userId]);
-
-    // Check if the user exists
-    if (userData.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Return the user data as a JSON response
-    res.json(userData.rows);
-  } catch (error) {
-    // Log and handle more specific errors
-    next(error);
-  }
+// API endpoint to fetch data from the user-specific database
+app.get('/api/v1/user-data', async (req: Request, res: Response) => {
+  const userSpecificData = await req.userDbPool.query('SELECT * FROM your_table_name');
+  res.json(userSpecificData.rows);
 });
 
-// Apply error handling middleware
-app.use(handleErrors);
-
-// Start the server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+app.listen(port, () => console.log(`Server running on port ${port}`));
 ```
-### 4. Environment Variables and `.env` File:
 
-In your TypeScript implementation, you are using the `dotenv` library to load environment variables from a `.env` file. Below is an example of what your `.env` file might look like:
+#### Environment Variables in `.env`
 
 ```plaintext
-# .env file
+# .env file configuration
 
-# Database connection URL
-DATABASE_URL=your_postgresql_connection_url
-
-# Node environment
+MANAGEMENT_DB_URL=your_management_database_url
 NODE_ENV=development
-
-# Port for the server
 PORT=3000
-```
-
-Make sure to add this file to your `.gitignore` to prevent it from being committed to version control.
-
-```plaintext
-# .gitignore file
-
-# Ignore .env files
-.env
 ```
