@@ -67,7 +67,8 @@ CREATE DATABASE cube_management_db;
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
-    status VARCHAR(50) NOT NULL CHECK (status IN ('active', 'inactive'))
+    status VARCHAR(50) NOT NULL CHECK (status IN ('active', 'inactive')),
+    venture_id INTEGER
 );
 ```
 
