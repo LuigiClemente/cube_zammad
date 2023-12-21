@@ -68,7 +68,7 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     status VARCHAR(50) NOT NULL CHECK (status IN ('active', 'inactive')),
-    venture_id INTEGER
+    vendure_id INTEGER
 );
 ```
 
